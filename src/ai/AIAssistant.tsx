@@ -3,7 +3,7 @@ import { Send, Sparkles, X, Lightbulb, Calendar, Clock, Wrench, Zap } from 'luci
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAIV2 } from '@/hooks/useAIV2';
+import { useAI } from '@/hooks/useAI';
 import type { CalendarEvent } from '@/types';
 import { format } from 'date-fns';
 
@@ -22,7 +22,7 @@ const QUICK_ACTIONS = [
 export function AIAssistant({ selectedDate, events }: AIAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { isLoading, messages, sendMessage, clearMessages } = useAIV2();
+  const { isLoading, messages, sendMessage, clearMessages } = useAI();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

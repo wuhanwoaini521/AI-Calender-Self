@@ -1,178 +1,171 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from datetime import datetime
-from typing import Optional, List
-from ..models.schemas import AIChatRequest, AIChatResponse, APIResponse
-from ..models.database import db
+"""AI Router v2 - With Tools / Skills / MCP Support"""
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
+import json
+import asyncio
+
 from ..routers.auth import get_current_user
+from ..models.schemas import APIResponse
 from ..services.ai_service import ai_service
-from dateutil import parser
+from ..tools.registry import registry as tool_registry
+from ..skills.registry import skill_registry, SkillContext
+from datetime import datetime
 
-router = APIRouter(prefix="/ai", tags=["AI Assistant"])
+router = APIRouter(prefix="/ai/v2", tags=["AI v2"])
 
 
-@router.post("/chat", response_model=APIResponse)
+class ChatRequest(BaseModel):
+    """Chat request"""
+    message: str
+    history: Optional[List[Dict[str, str]]] = []
+    context: Optional[Dict[str, Any]] = None
+    use_skills: bool = True
+
+
+class ChatResponse(BaseModel):
+    """Chat response chunk"""
+    type: str  # "text", "tool_call", "skill_start", "skill_result"
+    content: Optional[str] = None
+    tool: Optional[str] = None
+    skill: Optional[str] = None
+    success: Optional[bool] = None
+    result: Optional[Any] = None
+    message: Optional[str] = None
+    data: Optional[Any] = None
+    steps: Optional[List[Dict]] = None
+
+
+class ToolCallRequest(BaseModel):
+    """Direct tool call request"""
+    tool: str
+    params: Dict[str, Any]
+
+
+class SkillCallRequest(BaseModel):
+    """Direct skill call request"""
+    skill: str
+    params: Optional[Dict[str, Any]] = {}
+
+
+class MCPRequest(BaseModel):
+    """MCP protocol request"""
+    request: Dict[str, Any]
+
+
+@router.post("/chat", response_model=None)
 async def chat(
-    request: AIChatRequest,
-    current_user = Depends(get_current_user)
+    req: ChatRequest,
+    current_user = Depends(get_current_user),
 ):
-    """Chat with AI assistant"""
-    if not request.message:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Message is required"
-        )
+    """
+    Chat with AI assistant with tool calling support
     
-    # Save user message
-    db.create_chat_message(
+    Returns a streaming response with text and tool call results
+    """
+    messages = (req.history or []) + [{"role": "user", "content": req.message}]
+    
+    async def event_generator():
+        try:
+            if req.use_skills:
+                async for chunk in ai_service.chat_with_skills(
+                    messages=messages,
+                    user_id=current_user.id,
+                    context=req.context,
+                ):
+                    yield f"data: {chunk}\n\n"
+            else:
+                async for chunk in ai_service.chat(
+                    messages=messages,
+                    user_id=current_user.id,
+                    context=req.context,
+                    use_tools=True,
+                ):
+                    yield f"data: {chunk}\n\n"
+            
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+    )
+
+
+@router.post("/tools/call")
+async def call_tool(
+    req: ToolCallRequest,
+    current_user = Depends(get_current_user),
+):
+    """Call a tool directly"""
+    # Add user_id to params
+    params = {**req.params, "user_id": current_user.id}
+    
+    result = await tool_registry.execute(req.tool, **params)
+    
+    return APIResponse(
+        success=result.success,
+        message=result.message,
+        data=result.data,
+    )
+
+
+@router.get("/tools")
+async def list_tools(
+    current_user = Depends(get_current_user),
+):
+    """List available tools"""
+    tools = ai_service.get_available_tools()
+    return APIResponse(
+        success=True,
+        data={"tools": tools},
+    )
+
+
+@router.post("/skills/call")
+async def call_skill(
+    req: SkillCallRequest,
+    current_user = Depends(get_current_user),
+):
+    """Call a skill directly"""
+    context = SkillContext(
         user_id=current_user.id,
-        role="user",
-        content=request.message
+        current_date=datetime.utcnow(),
     )
     
-    # Get user's events for context
-    events = []
-    if request.context and request.context.get("selectedDate"):
-        try:
-            selected_date = parser.parse(request.context["selectedDate"])
-            events = db.get_events_by_date_range(
-                current_user.id,
-                selected_date.replace(hour=0, minute=0),
-                selected_date.replace(hour=23, minute=59)
-            )
-        except:
-            pass
-    else:
-        events = db.get_events_by_user(current_user.id)[:10]
+    params = {**req.params, "user_id": current_user.id}
     
-    # Generate AI response
-    ai_response = ai_service.generate_response(
-        request.message,
-        {
-            "currentDate": request.context.get("currentDate") if request.context else datetime.now().strftime("%Y-%m-%d"),
-            "selectedDate": request.context.get("selectedDate") if request.context else None,
-            "events": events
-        }
-    )
-    
-    # Save AI response
-    db.create_chat_message(
-        user_id=current_user.id,
-        role="assistant",
-        content=ai_response
-    )
+    result = await skill_registry.execute(req.skill, context, **params)
     
     return APIResponse(
-        success=True,
+        success=result.success,
+        message=result.message,
         data={
-            "message": ai_response,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "data": result.data,
+            "steps": [s.model_dump(mode='json') for s in result.steps],
+        },
     )
 
 
-@router.get("/insights", response_model=APIResponse)
-async def get_insights(
-    unread_only: bool = Query(False),
-    current_user = Depends(get_current_user)
+@router.get("/skills")
+async def list_skills(
+    current_user = Depends(get_current_user),
 ):
-    """Get AI insights for user"""
-    insights = db.get_insights_by_user(current_user.id, unread_only)
+    """List available skills"""
+    skills = ai_service.get_available_skills()
     return APIResponse(
         success=True,
-        data={"insights": [i.model_dump(mode='json') for i in insights]}
+        data={"skills": skills},
     )
 
 
-@router.put("/insights/{insight_id}/read", response_model=APIResponse)
-async def mark_insight_as_read(
-    insight_id: str,
-    current_user = Depends(get_current_user)
+@router.post("/mcp")
+async def mcp_endpoint(
+    req: MCPRequest,
 ):
-    """Mark an insight as read"""
-    insight = db.mark_insight_as_read(insight_id)
-    
-    if not insight:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Insight not found"
-        )
-    
-    return APIResponse(
-        success=True,
-        data={"insight": insight.model_dump(mode='json')}
-    )
-
-
-@router.get("/suggestions", response_model=APIResponse)
-async def get_suggestions(
-    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
-    current_user = Depends(get_current_user)
-):
-    """Get AI suggestions for the day"""
-    if date:
-        try:
-            target_date = datetime.strptime(date, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid date format. Use YYYY-MM-DD"
-            )
-    else:
-        target_date = datetime.now()
-    
-    suggestions = ai_service.generate_suggestions(current_user.id, target_date)
-    
-    return APIResponse(
-        success=True,
-        data={"suggestions": suggestions}
-    )
-
-
-@router.post("/schedule", response_model=APIResponse)
-async def generate_schedule(
-    tasks: List[dict],
-    date: Optional[str] = None,
-    preferences: Optional[dict] = None,
-    current_user = Depends(get_current_user)
-):
-    """Generate an optimized schedule for tasks"""
-    if not tasks or not isinstance(tasks, list):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tasks array is required"
-        )
-    
-    if date:
-        try:
-            target_date = datetime.strptime(date, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid date format. Use YYYY-MM-DD"
-            )
-    else:
-        target_date = datetime.now()
-    
-    # Get existing events for the day
-    existing_events = db.get_events_by_date_range(
-        current_user.id,
-        target_date.replace(hour=0, minute=0),
-        target_date.replace(hour=23, minute=59)
-    )
-    
-    include_breaks = preferences.get("includeBreaks", True) if preferences else True
-    
-    schedule = ai_service.generate_schedule(
-        tasks,
-        target_date,
-        existing_events,
-        include_breaks
-    )
-    
-    return APIResponse(
-        success=True,
-        data={
-            "schedule": schedule,
-            "message": f"Generated schedule with {len(schedule)} tasks"
-        }
-    )
+    """MCP protocol endpoint"""
+    response = await ai_service.mcp_handle(req.request)
+    return response

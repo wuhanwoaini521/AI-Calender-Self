@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import get_settings
 from .routers import auth, events, ai
-from .routers.ai_v2 import router as ai_v2_router
 
 settings = get_settings()
 
@@ -41,7 +40,6 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
-app.include_router(ai_v2_router, prefix="/api")  # New AI v2 router with Tools/Skills/MCP
 
 
 @app.get("/")
