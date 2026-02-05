@@ -15,12 +15,26 @@ app = FastAPI(
 )
 
 # CORS middleware
+# Support multiple origins including common dev ports
+allow_origins = [
+    settings.FRONTEND_URL,
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:4173",
+]
+# Remove duplicates while preserving order
+seen = set()
+allow_origins = [x for x in allow_origins if not (x in seen or seen.add(x))]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173", "http://localhost:4173"],
+    allow_origins=allow_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 # Include routers

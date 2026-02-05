@@ -17,12 +17,19 @@ from .tools.schedule_tools import (
     OptimizeScheduleTool,
     SuggestBreaksTool,
 )
+from .tools.notification_tools import (
+    SendReminderEmailTool,
+    SendNotificationTool,
+)
 
 # Import all skills
 from .skills.calendar_skills import (
     ScheduleManagementSkill,
     MeetingPlanningSkill,
     DailyPlanningSkill,
+)
+from .skills.meeting_assistant_skill import (
+    SmartMeetingScheduleSkill,
 )
 
 
@@ -38,6 +45,8 @@ def register_tools():
         GenerateScheduleTool,
         OptimizeScheduleTool,
         SuggestBreaksTool,
+        SendReminderEmailTool,
+        SendNotificationTool,
     ]
     
     for tool_class in tools:
@@ -52,6 +61,7 @@ def register_skills():
         ScheduleManagementSkill,
         MeetingPlanningSkill,
         DailyPlanningSkill,
+        SmartMeetingScheduleSkill,
     ]
     
     for skill_class in skills:

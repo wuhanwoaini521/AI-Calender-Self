@@ -184,7 +184,7 @@ class MCPServer:
                 }
             ],
             "data": result.data,
-            "steps": [s.model_dump() for s in result.steps],
+            "steps": [s.model_dump(mode='json') for s in result.steps],
             "isError": not result.success,
         }
     

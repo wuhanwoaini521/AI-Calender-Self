@@ -79,7 +79,7 @@ async def get_insights(
     insights = db.get_insights_by_user(current_user.id, unread_only)
     return APIResponse(
         success=True,
-        data={"insights": [i.model_dump() for i in insights]}
+        data={"insights": [i.model_dump(mode='json') for i in insights]}
     )
 
 
@@ -99,7 +99,7 @@ async def mark_insight_as_read(
     
     return APIResponse(
         success=True,
-        data={"insight": insight.model_dump()}
+        data={"insight": insight.model_dump(mode='json')}
     )
 
 

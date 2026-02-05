@@ -1,11 +1,11 @@
-"""
+/*
 useAIV2 Hook - With Tools / Skills / MCP Support
 
 This hook provides:
 - Streaming chat with tool calling
 - Direct skill invocation
 - Tool and skill discovery
-"""
+*/
 
 import { useState, useCallback, useRef } from 'react';
 import { api } from '@/services/api';
@@ -199,13 +199,22 @@ export function useAIV2() {
               
               switch (parsed.type) {
                 case 'text':
-                  assistantContent += parsed.content;
+                  // 如果是工具调用后的第一条文本，重置内容
+                  if (currentToolCall || currentSkillResult) {
+                    assistantContent = parsed.content;
+                    currentToolCall = null;
+                    currentSkillResult = null;
+                  } else {
+                    assistantContent += parsed.content;
+                  }
                   // Update the last assistant message or create new one
                   setMessages(prev => {
                     const last = prev[prev.length - 1];
-                    if (last && last.role === 'assistant') {
+                    // 如果最后一条是assistant消息，更新它
+                    if (last && last.role === 'assistant' && !last.toolCall && !last.skillResult) {
                       return [...prev.slice(0, -1), { ...last, content: assistantContent }];
                     }
+                    // 否则创建新消息
                     return [...prev, { role: 'assistant', content: assistantContent }];
                   });
                   break;

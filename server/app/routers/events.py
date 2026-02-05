@@ -47,7 +47,7 @@ async def create_event(
     
     return APIResponse(
         success=True,
-        data={"event": new_event.model_dump(by_alias=True)}
+        data={"event": new_event.model_dump(by_alias=True, mode='json')}
     )
 
 
@@ -84,7 +84,7 @@ async def get_events(
         else:
             # Default: get all events
             events = db.get_events_by_user(current_user.id)
-            return APIResponse(success=True, data={"events": [e.model_dump(by_alias=True) for e in events]})
+            return APIResponse(success=True, data={"events": [e.model_dump(by_alias=True, mode='json') for e in events]})
         
         events = db.get_events_by_date_range(current_user.id, start, end)
     else:
@@ -92,7 +92,7 @@ async def get_events(
     
     return APIResponse(
         success=True,
-        data={"events": [e.model_dump(by_alias=True) for e in events]}
+        data={"events": [e.model_dump(by_alias=True, mode='json') for e in events]}
     )
 
 
@@ -104,7 +104,7 @@ async def get_upcoming_events(
     events = db.get_upcoming_events(current_user.id, limit)
     return APIResponse(
         success=True,
-        data={"events": [e.model_dump(by_alias=True) for e in events]}
+        data={"events": [e.model_dump(by_alias=True, mode='json') for e in events]}
     )
 
 
@@ -123,7 +123,7 @@ async def get_event(
     
     return APIResponse(
         success=True,
-        data={"event": event.model_dump(by_alias=True)}
+        data={"event": event.model_dump(by_alias=True, mode='json')}
     )
 
 
@@ -175,7 +175,7 @@ async def update_event(
     
     return APIResponse(
         success=True,
-        data={"event": updated_event.model_dump(by_alias=True)}
+        data={"event": updated_event.model_dump(by_alias=True, mode='json')}
     )
 
 

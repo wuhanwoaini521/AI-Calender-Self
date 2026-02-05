@@ -73,7 +73,7 @@ async def register(request: RegisterRequest):
     return APIResponse(
         success=True,
         data={
-            "user": user_response.model_dump(),
+            "user": user_response.model_dump(mode='json'),
             "token": token
         }
     )
@@ -112,7 +112,7 @@ async def login(request: LoginRequest):
     return APIResponse(
         success=True,
         data={
-            "user": user_response.model_dump(),
+            "user": user_response.model_dump(mode='json'),
             "token": token
         }
     )
@@ -122,7 +122,7 @@ async def login(request: LoginRequest):
 async def get_profile(current_user: User = Depends(get_current_user)):
     return APIResponse(
         success=True,
-        data={"user": current_user.model_dump()}
+        data={"user": current_user.model_dump(mode='json')}
     )
 
 
@@ -158,5 +158,5 @@ async def update_profile(
     
     return APIResponse(
         success=True,
-        data={"user": user_response.model_dump()}
+        data={"user": user_response.model_dump(mode='json')}
     )

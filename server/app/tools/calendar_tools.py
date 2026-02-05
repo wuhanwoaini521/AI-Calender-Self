@@ -9,32 +9,32 @@ from ..models.schemas import CalendarEvent, Reminder
 
 
 class CreateEventTool(Tool):
-    """Create a new calendar event"""
+    """创建新日历事件"""
     
     name = "create_event"
-    description = "Create a new calendar event with title, time, and optional reminders"
+    description = "创建一个新的日历事件/会议/日程，包含标题、开始时间、结束时间和可选的提醒"
     parameters = [
         ToolParameter(
             name="user_id",
-            description="ID of the user creating the event",
+            description="创建事件的用户ID",
             type=ToolParameterType.STRING,
             required=True,
         ),
         ToolParameter(
             name="title",
-            description="Title of the event",
+            description="事件标题，例如：会议、约会、聚餐",
             type=ToolParameterType.STRING,
             required=True,
         ),
         ToolParameter(
             name="start_time",
-            description="Start time in ISO 8601 format (e.g., 2026-02-05T11:00:00)",
+            description="开始时间，ISO 8601格式，例如：2026-02-05T11:00:00",
             type=ToolParameterType.STRING,
             required=True,
         ),
         ToolParameter(
             name="end_time",
-            description="End time in ISO 8601 format (e.g., 2026-02-05T12:00:00)",
+            description="结束时间，ISO 8601格式，例如：2026-02-05T12:00:00",
             type=ToolParameterType.STRING,
             required=True,
         ),
@@ -106,7 +106,7 @@ class CreateEventTool(Tool):
             )
             
             return ToolResult.ok(
-                data=event.model_dump(by_alias=True),
+                data=event.model_dump(by_alias=True, mode='json'),
                 message=f"Event '{kwargs['title']}' created successfully"
             )
         except Exception as e:
@@ -171,7 +171,7 @@ class GetEventsTool(Tool):
             
             return ToolResult.ok(
                 data={
-                    "events": [e.model_dump(by_alias=True) for e in events],
+                    "events": [e.model_dump(by_alias=True, mode='json') for e in events],
                     "count": len(events),
                     "view": view,
                     "date": date_str,
@@ -251,7 +251,7 @@ class UpdateEventTool(Tool):
             updated = db.update_event(event_id, **updates)
             
             return ToolResult.ok(
-                data=updated.model_dump(by_alias=True),
+                data=updated.model_dump(by_alias=True, mode='json'),
                 message="Event updated successfully"
             )
         except Exception as e:

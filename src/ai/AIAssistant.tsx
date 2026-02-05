@@ -16,6 +16,7 @@ const QUICK_ACTIONS = [
   { icon: Calendar, label: '查看日程', query: '我今天有什么安排？' },
   { icon: Clock, label: '空闲时间', query: '我什么时候有空？' },
   { icon: Lightbulb, label: '优化建议', query: '帮我优化今天的日程' },
+  { icon: Send, label: '创建会议', query: '明天下午三点开会' },
 ];
 
 export function AIAssistant({ selectedDate, events }: AIAssistantProps) {
@@ -58,18 +59,22 @@ export function AIAssistant({ selectedDate, events }: AIAssistantProps) {
     if (isTool && msg.toolCall) {
       return (
         <div key={index} className="flex justify-start">
-          <div className="max-w-[90%] rounded-2xl px-4 py-2 bg-blue-50 border border-blue-200">
-            <div className="flex items-center gap-2 mb-1">
-              <Wrench className="h-3 w-3 text-blue-600" />
+          <div className="max-w-[90%] rounded-2xl px-4 py-3 bg-blue-50 border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
+                <Wrench className="h-3 w-3 text-blue-600" />
+              </div>
               <span className="text-xs font-medium text-blue-600">
                 使用工具: {msg.toolCall.tool}
               </span>
             </div>
-            <p className="text-sm text-slate-700">
-              {msg.toolCall.success ? '✅ 执行成功' : '❌ 执行失败'}
-            </p>
+            <div className={`text-sm font-medium ${
+              msg.toolCall.success ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {msg.toolCall.success ? '✓ 执行成功' : '✗ 执行失败'}
+            </div>
             {msg.toolCall.message && (
-              <p className="text-xs text-slate-500 mt-1">{msg.toolCall.message}</p>
+              <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">{msg.toolCall.message}</p>
             )}
           </div>
         </div>
@@ -79,23 +84,38 @@ export function AIAssistant({ selectedDate, events }: AIAssistantProps) {
     if (isSkill && msg.skillResult) {
       return (
         <div key={index} className="flex justify-start">
-          <div className="max-w-[90%] rounded-2xl px-4 py-2 bg-purple-50 border border-purple-200">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="h-3 w-3 text-purple-600" />
+          <div className="max-w-[90%] rounded-2xl px-4 py-3 bg-purple-50 border border-purple-200">
+            {/* 技能标题 */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-5 w-5 rounded-full bg-purple-100 flex items-center justify-center">
+                <Zap className="h-3 w-3 text-purple-600" />
+              </div>
               <span className="text-xs font-medium text-purple-600">
                 执行技能: {msg.skillResult.skill}
               </span>
             </div>
-            <p className="text-sm text-slate-800 whitespace-pre-wrap">{msg.content}</p>
+            
+            {/* 技能结果内容 */}
+            <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+              {msg.content}
+            </div>
+            
+            {/* 执行步骤 */}
             {msg.skillResult.steps && msg.skillResult.steps.length > 0 && (
-              <div className="mt-2 text-xs text-slate-500">
-                <p className="font-medium">执行步骤:</p>
-                {msg.skillResult.steps.map((step, i) => (
-                  <div key={i} className="flex items-center gap-1 mt-0.5">
-                    <span>{step.success ? '✓' : '✗'}</span>
-                    <span>{step.tool_name}</span>
-                  </div>
-                ))}
+              <div className="mt-3 pt-2 border-t border-purple-200/50">
+                <p className="text-xs font-medium text-purple-700 mb-1.5">执行步骤</p>
+                <div className="space-y-1">
+                  {msg.skillResult.steps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                        step.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                      }`}>
+                        {step.success ? '✓' : '✗'}
+                      </span>
+                      <span className="text-slate-600">{step.tool_name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -109,13 +129,13 @@ export function AIAssistant({ selectedDate, events }: AIAssistantProps) {
         className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
       >
         <div
-          className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+          className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
             isUser
               ? 'bg-slate-900 text-white'
-              : 'bg-slate-100 text-slate-900'
+              : 'bg-slate-100 text-slate-800'
           }`}
         >
-          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
         </div>
       </div>
     );
@@ -169,7 +189,7 @@ export function AIAssistant({ selectedDate, events }: AIAssistantProps) {
 
           {/* Quick Actions */}
           {messages.length === 0 && (
-            <div className="p-4 grid grid-cols-3 gap-2">
+            <div className="p-4 grid grid-cols-4 gap-2">
               {QUICK_ACTIONS.map((action) => (
                 <button
                   key={action.label}
