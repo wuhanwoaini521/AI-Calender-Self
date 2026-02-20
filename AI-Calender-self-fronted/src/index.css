@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 0%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-white text-black antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* 手绘风格边框 - 不规则圆角 */
+.sketchy-border {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid black;
+}
+
+.sketchy-border-light {
+  border-radius: 20px 200px 20px 200px / 200px 20px 200px 20px;
+  border: 2px solid black;
+}
+
+.sketchy-border-rough {
+  border-radius: 2% 98% 2% 98% / 98% 2% 98% 2%;
+  border: 2px solid black;
+}
+
+/* 手绘风格卡片 - 纯白背景 */
+.sketchy-card {
+  border-radius: 30px 2px 30px 2px / 2px 30px 2px 30px;
+  border: 2px solid black;
+  background: white;
+  position: relative;
+}
+
+/* 手绘阴影 */
+.sketchy-shadow {
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.sketchy-shadow:hover {
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* 液态玻璃效果 - 更透明更亮 */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 2px solid black;
+}
+
+/* 流动的液态效果动画 */
+@keyframes liquid-flow {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+  }
+  50% {
+    border-radius: 50% 60% 30% 60% / 30% 60% 70% 40%;
+  }
+  75% {
+    border-radius: 60% 40% 60% 30% / 70% 30% 50% 60%;
+  }
+}
+
+.liquid-blob {
+  animation: liquid-flow 8s ease-in-out infinite;
+  filter: blur(60px);
+  opacity: 0.08;
+}
+
+.liquid-blob-slow {
+  animation: liquid-flow 15s ease-in-out infinite;
+  filter: blur(80px);
+  opacity: 0.06;
+}
+
+/* 手绘涂鸦背景 */
+.doodle-bg {
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(0,0,0,0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0,0,0,0.02) 0%, transparent 50%);
+}
+
+/* 手绘线条装饰 */
+.sketchy-line {
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    black 0px,
+    black 6px,
+    transparent 6px,
+    transparent 10px
+  );
+}
+
+/* 隐藏滚动条 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 选中文字样式 */
+::selection {
+  background: black;
+  color: white;
+}
+
+/* 动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 3s ease-in-out infinite;
+}
+
+/* 按钮手绘效果 */
+.sketchy-btn {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid black;
+  background: white;
+  transition: all 0.15s ease;
+}
+
+.sketchy-btn:hover {
+  background: black;
+  color: white;
+  transform: translateY(-2px) rotate(-1deg);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.sketchy-btn:active {
+  transform: translateY(0) rotate(0deg);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* 纯黑按钮 */
+.sketchy-btn-filled {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid black;
+  background: black;
+  color: white;
+  transition: all 0.15s ease;
+}
+
+.sketchy-btn-filled:hover {
+  background: white;
+  color: black;
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+}
