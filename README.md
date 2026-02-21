@@ -40,6 +40,13 @@ AI-Calender-Self/
 └── .env                   # 环境变量配置
 ```
 
+## 🖼️ 项目截图
+### 时间线
+<img width="1765" height="1449" alt="image" src="https://github.com/user-attachments/assets/a1a16676-cf39-49e7-a8ba-461616b9e099" />
+
+### 月视图
+<img width="1775" height="1448" alt="image" src="https://github.com/user-attachments/assets/6ab0fc13-3cdb-4e70-8813-5c5f75b5c459" />
+
 ## 🚀 快速开始
 
 ### 1. 环境要求
