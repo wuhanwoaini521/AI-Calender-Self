@@ -70,7 +70,8 @@ export function DayDetail({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (deleteEventId && onDeleteEvent) {
       onDeleteEvent(deleteEventId);
       setDeleteEventId(null);
@@ -305,7 +306,7 @@ export function DayDetail({
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteEventId(null)} className="border-2 border-black hover:bg-black hover:text-white"
+                <Button variant="outline" onClick={(e) => { e.stopPropagation(); setDeleteEventId(null); }} className="border-2 border-black hover:bg-black hover:text-white"
                   style={{ borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px' }}
                 >
                   取消

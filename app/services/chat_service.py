@@ -115,6 +115,32 @@ class ChatService:
 4. 在创建、更新或删除事件后，向用户确认操作结果
 5. 用友好、专业的语气与用户交流
 
+查询事件的工作流程（必须遵循）：
+1. 当用户询问某天的事件时，必须同时使用 start_date 和 end_date 参数来限定日期范围
+2. 查询一天的事件时：start_date 使用 "YYYY-MM-DDT00:00:00"，end_date 使用 "YYYY-MM-DDT23:59:59"
+3. 例如查询明天（2026-02-22）的事件：start_date="2026-02-22T00:00:00", end_date="2026-02-22T23:59:59"
+
+删除事件的工作流程（CRITICAL - 必须严格遵循）：
+1. 当用户要求删除事件时，首先调用 list_events 工具查询匹配的事件（必须带日期范围）
+2. **关键步骤**：获取到 list_events 结果后，**必须立即**调用 delete_event 工具并传入 event_id，**不能**只回复文字
+3. 删除和查询必须在同一次对话轮次中完成，先 list_events 后 delete_event
+4. 如果 delete_event 返回成功，再回复用户删除完成
+
+删除循环任务的说明：
+- 每个循环任务的实例都有独立的 event_id 和 parent_event_id
+- 删除单个实例：使用 delete_event(event_id="实例ID", delete_all_instances=false)
+- 删除整个循环任务：使用 delete_event(event_id="父事件ID", delete_all_instances=true) 或 delete_event(event_id="任意实例ID", delete_all_instances=true)
+- 当用户说"删除某一个"时，使用 delete_all_instances=false
+
+工具调用顺序示例：
+用户：删除明天上午9点的会议
+→ 你调用：list_events(start_date="2026-02-22T00:00:00", end_date="2026-02-22T23:59:59")
+→ 系统返回：找到1个事件，id="ec91830c-1862-4a5d-80c3-dd2baf0ed46e"
+→ **你必须立即调用**：delete_event(event_id="ec91830c-1862-4a5d-80c3-dd2baf0ed46e")
+→ 最后回复：已成功删除明天上午9点的会议"会议"
+
+⚠️ 警告：如果你只回复"找到了事件，现在为您删除..."但没有实际调用 delete_event 工具，这是错误的！
+
 """
         
         # 添加 Skills 文档
@@ -199,21 +225,84 @@ class ChatService:
                     "content": json.dumps(result, ensure_ascii=False)
                 })
             
-            # 继续对话获取最终回复
-            final_response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages
-            )
+            # 继续对话，允许 AI 再次调用工具（如 delete_event）
+            # 使用循环处理多轮工具调用，直到 AI 返回文字回复
+            max_iterations = 5
+            assistant_message = ""
+            for iteration in range(max_iterations):
+                final_response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=self.tools,
+                    tool_choice="auto"
+                )
+                
+                final_message = final_response.choices[0].message
+                
+                # 如果 AI 不再调用工具，获取最终回复
+                if not final_message.tool_calls:
+                    assistant_message = final_message.content or ""
+                    break
+                
+                # AI 还想调用更多工具（如 delete_event），继续处理
+                messages.append({
+                    "role": "assistant",
+                    "content": final_message.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments
+                            }
+                        }
+                        for tc in final_message.tool_calls
+                    ]
+                })
+                
+                # 执行新的工具调用
+                for tool_call in final_message.tool_calls:
+                    import json
+                    
+                    tool_name = tool_call.function.name
+                    tool_input = json.loads(tool_call.function.arguments)
+                    
+                    tool_calls.append({
+                        "name": tool_name,
+                        "input": tool_input
+                    })
+                    
+                    result = await self.mcp_server.execute_tool(tool_name, tool_input)
+                    
+                    if result.get("success") and "event" in result:
+                        events_modified.append(result["event"]["id"])
+                    
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": tool_name,
+                        "content": json.dumps(result, ensure_ascii=False)
+                    })
             
-            assistant_message = final_response.choices[0].message.content or ""
+            if not assistant_message and iteration >= max_iterations - 1:
+                assistant_message = "处理超时，请重试"
         else:
             assistant_message = response_message.content or ""
         
-        return ChatResponse(
+        # 确保 tool_calls 始终返回（即使是空列表），方便前端调试
+        response_data = ChatResponse(
             message=assistant_message,
             tool_calls=tool_calls if tool_calls else None,
             events_modified=events_modified if events_modified else None
         )
+        
+        # 添加调试日志
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Chat response: message={assistant_message[:50]}..., tool_calls_count={len(tool_calls)}, events_modified_count={len(events_modified)}")
+        
+        return response_data
     
     def _build_messages(self, request: ChatRequest) -> List[Dict[str, Any]]:
         """

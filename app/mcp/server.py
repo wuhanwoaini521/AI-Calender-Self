@@ -77,11 +77,11 @@ class MCPServer:
                 recurrence_rule=recurrence_rule
             )
             
-            event = self.calendar_service.create_event(event_data)
+            event = await self.calendar_service.create_event(event_data)
             
             # 构建返回消息
             if event.recurrence_rule:
-                instances = self.calendar_service.get_events_by_parent(event.id)
+                instances = await self.calendar_service.get_events_by_parent(event.id)
                 message = f"成功创建重复事件: {event.title}，共生成 {len(instances) + 1} 个实例"
             else:
                 message = f"成功创建事件: {event.title}"
@@ -104,12 +104,21 @@ class MCPServer:
             end_date = None
             keyword = params.get("keyword")
             
-            if "start_date" in params:
-                start_date = datetime.fromisoformat(params["start_date"])
-            if "end_date" in params:
-                end_date = datetime.fromisoformat(params["end_date"])
+            if "start_date" in params and params["start_date"]:
+                # 支持纯日期格式（自动转为当天开始时间）
+                start_str = params["start_date"]
+                if len(start_str) == 10:  # YYYY-MM-DD
+                    start_str += "T00:00:00"
+                start_date = datetime.fromisoformat(start_str)
             
-            events = self.calendar_service.list_events(
+            if "end_date" in params and params["end_date"]:
+                # 支持纯日期格式（自动转为当天结束时间）
+                end_str = params["end_date"]
+                if len(end_str) == 10:  # YYYY-MM-DD
+                    end_str += "T23:59:59"
+                end_date = datetime.fromisoformat(end_str)
+            
+            events = await self.calendar_service.list_events(
                 start_date=start_date,
                 end_date=end_date,
                 keyword=keyword
@@ -144,7 +153,7 @@ class MCPServer:
             if "location" in params:
                 update_data.location = params["location"]
             
-            event = self.calendar_service.update_event(event_id, update_data)
+            event = await self.calendar_service.update_event(event_id, update_data)
             
             if event:
                 return {
@@ -170,24 +179,33 @@ class MCPServer:
             delete_all = params.get("delete_all_instances", True)
             
             # 获取事件信息用于确认
-            event = self.calendar_service.get_event(event_id)
+            event = await self.calendar_service.get_event(event_id)
             if not event:
                 return {
                     "success": False,
                     "error": f"未找到ID为 {event_id} 的事件"
                 }
             
-            success = self.calendar_service.delete_event(event_id, delete_all_instances=delete_all)
+            # 保存事件信息用于返回
+            event_data = event.model_dump(mode="json")
+            
+            success = await self.calendar_service.delete_event(event_id, delete_all_instances=delete_all)
             
             if success:
-                if event.parent_event_id or event.recurrence_rule:
+                if event.parent_event_id:
+                    if delete_all:
+                        message = f"成功删除重复事件及其所有实例: {event.title}"
+                    else:
+                        message = f"成功删除重复事件的单个实例: {event.title}"
+                elif event.recurrence_rule:
                     message = f"成功删除重复事件及其所有实例: {event.title}"
                 else:
                     message = f"成功删除事件: {event.title}"
                 
                 return {
                     "success": True,
-                    "message": message
+                    "message": message,
+                    "event": event_data
                 }
             else:
                 return {

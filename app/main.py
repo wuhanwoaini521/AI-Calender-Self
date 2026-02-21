@@ -1,17 +1,30 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.config import get_settings
+from app.database import init_db
 
 # 获取配置
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    # 启动时初始化数据库
+    await init_db()
+    yield
+    # 关闭时可以在这里清理资源
+
 
 # 创建 FastAPI 应用
 app = FastAPI(
     title=settings.app_name,
     description="一个基于 FastAPI + MCP + Skills 的日历管理后端服务",
     version="1.0.0",
-    debug=settings.debug
+    debug=settings.debug,
+    lifespan=lifespan
 )
 
 # CORS 配置

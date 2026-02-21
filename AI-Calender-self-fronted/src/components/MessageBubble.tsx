@@ -39,17 +39,24 @@ export function MessageBubble({ message, toolCalls }: MessageBubbleProps) {
         </Card>
 
         {/* 工具调用展示 */}
-        {toolCalls && toolCalls.length > 0 && (
+        {toolCalls !== undefined && (
           <div className="mt-2 space-y-1">
-            {toolCalls.map((tool, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 text-xs text-muted-foreground"
-              >
+            {toolCalls.length > 0 ? (
+              toolCalls.map((tool, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <Wrench className="w-3 h-3" />
+                  <span>调用了工具: {tool.name}</span>
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
                 <Wrench className="w-3 h-3" />
-                <span>调用了工具: {tool.name}</span>
+                <span>无工具调用</span>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

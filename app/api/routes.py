@@ -73,7 +73,7 @@ async def chat(
 async def create_event(event: CalendarEventCreate):
     """创建日历事件"""
     try:
-        created_event = calendar_service.create_event(event)
+        created_event = await calendar_service.create_event(event)
         return created_event
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -97,7 +97,7 @@ async def list_events(
         start = datetime.fromisoformat(start_date) if start_date else None
         end = datetime.fromisoformat(end_date) if end_date else None
         
-        events = calendar_service.list_events(
+        events = await calendar_service.list_events(
             start_date=start,
             end_date=end,
             keyword=keyword
@@ -110,7 +110,7 @@ async def list_events(
 @router.get("/events/{event_id}", response_model=CalendarEvent)
 async def get_event(event_id: str):
     """获取单个日历事件"""
-    event = calendar_service.get_event(event_id)
+    event = await calendar_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
@@ -119,7 +119,7 @@ async def get_event(event_id: str):
 @router.put("/events/{event_id}", response_model=CalendarEvent)
 async def update_event(event_id: str, event_update: CalendarEventUpdate):
     """更新日历事件"""
-    event = calendar_service.update_event(event_id, event_update)
+    event = await calendar_service.update_event(event_id, event_update)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
@@ -128,7 +128,7 @@ async def update_event(event_id: str, event_update: CalendarEventUpdate):
 @router.delete("/events/{event_id}")
 async def delete_event(event_id: str):
     """删除日历事件"""
-    success = calendar_service.delete_event(event_id)
+    success = await calendar_service.delete_event(event_id)
     if not success:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "Event deleted successfully", "event_id": event_id}

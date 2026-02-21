@@ -76,11 +76,11 @@ class MCPTools:
                     "properties": {
                         "start_date": {
                             "type": "string",
-                            "description": "开始日期筛选（可选），ISO 8601 格式"
+                            "description": "开始时间筛选（可选），ISO 8601 格式。例如：'2026-02-22T00:00:00' 表示从某天开始"
                         },
                         "end_date": {
                             "type": "string",
-                            "description": "结束日期筛选（可选），ISO 8601 格式"
+                            "description": "结束时间筛选（可选），ISO 8601 格式。例如：'2026-02-22T23:59:59' 表示到某天结束"
                         },
                         "keyword": {
                             "type": "string",
@@ -126,13 +126,13 @@ class MCPTools:
             },
             {
                 "name": "delete_event",
-                "description": "删除日历事件。如果是重复事件的父事件，会删除所有相关实例。",
+                "description": "删除日历事件。必须先通过 list_events 查询到 event_id，然后调用此工具删除。如果是重复事件的父事件，会删除所有相关实例。",
                 "input_schema": {
                     "type": "object",
                     "properties": {
                         "event_id": {
                             "type": "string",
-                            "description": "要删除的事件ID"
+                            "description": "要删除的事件ID（从 list_events 查询结果中获取的 id 字段）"
                         },
                         "delete_all_instances": {
                             "type": "boolean",

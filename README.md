@@ -7,6 +7,7 @@
 - 🤖 **AI 对话管理日历** - 通过自然语言与日历交互
 - 📅 **智能时间解析** - 自动识别"明天"、"后天"、"下周一"等相对时间
 - 🔄 **重复事件支持** - 支持每天、每周特定天数、每月重复的日程
+- 💾 **SQLite 持久化** - 数据本地存储，重启不丢失
 - 🛠️ **MCP 工具调用** - 基于 Model Context Protocol 的工具调用架构
 - 📝 **Skills 系统** - 可扩展的 Skill 文档支持
 - 🚀 **FastAPI 驱动** - 高性能异步 API
@@ -157,6 +158,7 @@ curl -X POST "http://localhost:8000/api/chat" \
 | `MODEL` | 使用的模型 | moonshot-v1-8k |
 | `DEBUG` | 调试模式 | true |
 | `APP_NAME` | 应用名称 | Calendar MCP Backend |
+| `DATABASE_PATH` | SQLite 数据库文件路径 | ./calendar.db |
 
 支持的模型：
 - `moonshot-v1-8k`
