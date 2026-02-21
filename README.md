@@ -2,6 +2,8 @@
 
 一个基于 FastAPI + MCP (Model Context Protocol) + Skills 的智能日历管理后端服务。支持通过自然语言对话来管理日程，创建单次或重复事件。
 
+📌 学习 FatAPI / MCP / SKills 的学习项目
+
 ## ✨ 主要特性
 
 - 🤖 **AI 对话管理日历** - 通过自然语言与日历交互
