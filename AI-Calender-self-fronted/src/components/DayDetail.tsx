@@ -103,14 +103,13 @@ export function DayDetail({
             exit={{ scale: 0.9, opacity: 0, y: 30 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-3xl max-h-[85vh] bg-white border-2 border-black overflow-hidden"
+            className="relative w-full max-w-3xl bg-white border-2 border-black overflow-hidden flex flex-col"
             style={{ 
+              maxHeight: '85vh',
               borderRadius: '30px 2px 30px 2px / 2px 30px 2px 30px',
               boxShadow: '8px 8px 0 rgba(0, 0, 0, 0.15)'
             }}
           >
-            {/* 内容 */}
-            <div className="relative h-full flex flex-col">
               {/* 头部 */}
               <div className="flex items-center justify-between p-8 border-b-2 border-black">
                 <div className="flex items-center gap-4">
@@ -218,7 +217,6 @@ export function DayDetail({
                   )}
                 </div>
               </div>
-            </div>
           </motion.div>
 
           {/* 编辑对话框 */}

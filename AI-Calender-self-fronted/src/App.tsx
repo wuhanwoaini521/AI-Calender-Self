@@ -77,6 +77,21 @@ function App() {
     loadEvents();
   }, []);
 
+  // 当 dayEvents 更新时，自动更新 selectedDay 以保持弹窗数据同步
+  useEffect(() => {
+    if (selectedDay && isDetailOpen) {
+      const updatedDay = dayEvents.find(day => day.date === selectedDay.date);
+      if (updatedDay) {
+        setSelectedDay(updatedDay);
+      } else {
+        setSelectedDay({
+          ...selectedDay,
+          events: [],
+        });
+      }
+    }
+  }, [dayEvents, selectedDay?.date, isDetailOpen]);
+
   const loadEvents = useCallback(async (): Promise<DayEvents[]> => {
     try {
       const events = await eventApi.getEvents();
